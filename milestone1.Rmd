@@ -1,0 +1,14 @@
+---
+title: "Milestone 1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Drake Deuel
+
+### 2/7/20
+
+I would like to replicate a paper focusing on the impact of cycling infrastructure in urban areas. I have had trouble finding any papers on this topic with replication code, which I don't think is unusal given that providing this code openly is an uncommon practice. I have found a few papers which have made their data freely availible, so I believe that I could replicate the studys from the raw data. One of the papers I'm currently considering is "Evaluating the impacts of new walking and cycling infrastructure on carbon dioxide emissions from motorized travel: A controlled longitudinal study" by Christian Brand, Anna Goodman, and David Ogilvie. I definitley want to do some more research to find the ideal paper however. 
