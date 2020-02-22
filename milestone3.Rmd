@@ -1,0 +1,18 @@
+---
+title: "Milestone 3"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Drake Deuel
+
+### 2/21/20
+
+I plan to replicate the **Impact of a public transit strike on public bicycle share use: An interrupted time series natural experiment study** a paper by Daniel Fuller et al. published in the June 2019 volume of the Journal of Transport & Health. The paper can be found [here](https://www.sciencedirect.com/science/article/pii/S221414051830553X).
+
+This paper uses Philadelphia's transit workers strike from November 1-7th, 2016, to generate a natural experiment in which other means of transit are interrupted to study the impact on bikeshare ride usage. The paper looked at control cities in Washington DC, Boston, and Chicago which are similar in size and in the development of bikeshare infrastructure. They also attempted to control for the temperature and precipitation levels as variables that would also affect bikeshare ride usage. The study found that bikeshare usage went up in Philidelphia during this transit strike when other options were limited, but that after the strike bikeshare usage returned to the pre-strike baseline. They concluded that while interventions directed to incentivize bikeshare usage would likely work given the flexibility shown by Philidelphia commuters, these interventions would need to be long term in order to change habits in the long term.
+
+My Github project repository can be found [here](https://github.com/ddeuel/1006-project).
