@@ -1,0 +1,67 @@
+---
+title: "Milestone 4"
+output:
+  pdf_document: default
+  html_document: default
+bibliography: citations.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(readr)
+library(gt)
+library(gtsummary)
+
+bikeshare <- read_csv("bikeshare.csv")
+```
+
+## Drake Deuel
+
+### 2/28/20
+
+I plan to replicate **Impact of a public transit strike on public bicycle share use: An interrupted time series natural experiment study** a paper by @FULLER2019137 published in the June 2019 volume of the Journal of Transport & Health. The paper can be found [here](https://www.sciencedirect.com/science/article/pii/S221414051830553X).
+
+This paper uses Philadelphia's transit workers strike from November 1-7th, 2016, to generate a natural experiment in which other means of transit are interrupted to study the impact on bikeshare ride usage. The paper looked at control cities in Washington DC, Boston, and Chicago which are similar in size and in the development of bikeshare infrastructure. They also attempted to control for the temperature and precipitation levels as variables that would also affect bikeshare ride usage. The study found that bikeshare usage went up in Philadelphia during this transit strike when other options were limited, but that after the strike bikeshare usage returned to the pre-strike baseline. They concluded that while interventions directed to incentivize bikeshare usage would likely work given the flexibility shown by Philidelphia commuters, these interventions would need to be long term in order to change habits in the long term.
+
+Check out my Github project repository^[[Github project repository link](https://github.com/ddeuel/1006-project)]
+
+
+```{r T1, echo=FALSE}
+
+bikeshare %>%
+  filter(city == "Philly") %>%
+  filter(passholder_type == "Indego30") %>%
+  filter(month == 11) %>%
+  filter(day > 0) %>%
+  filter(day < 8) %>%
+  select(city, month, day, year, number_trips) %>%
+  gt()
+
+```
+
+```{r T2, echo=FALSE}
+
+lm(number_trips ~ day, data = bikeshare) %>%
+  tbl_regression
+
+```
+
+```{r G1, echo=FALSE}
+
+bikeshare %>%
+  filter(city == "Philly") %>%
+  filter(passholder_type == "Indego30") %>%
+  filter(month > 8) %>%
+  ggplot(aes(x = start_time, y = number_trips)) +
+  geom_line() +
+  labs(title = "Philadelphia Bike Share",
+       subtitle = "September to January 2016",
+       x = "Date",
+       y = "Number of Member Trips",
+       caption = "Data sourced from David Fuller on Harvard Dataverse")
+
+```
+
+# References:
