@@ -1,0 +1,159 @@
+---
+title: "Milestone 6"
+author: "Drake Deuel"
+date: "April 3, 2020"
+output:
+  pdf_document: default
+  html_document: default
+bibliography: citations.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(readr)
+library(gt)
+library(gtsummary)
+library(lubridate)
+library(modelr)
+
+memberData <- read_csv("member_data.csv") %>%
+  mutate(by100000 = 10 * by10000) %>%
+  select(-by10000, -X1, -ID, -mean_duration) %>%
+  mutate(start_time = mdy(start_time)) %>%
+  add_row(city = "Philly", start_time = ymd("2016-01-23"), membertype = "shortterm") %>%
+  add_row(city = "Philly", start_time = ymd("2016-01-23"), membertype = "member") %>%
+  add_row(city = "Philly", start_time = ymd("2016-01-24"), membertype = "shortterm") %>%
+  add_row(city = "Philly", start_time = ymd("2016-01-24"), membertype = "member") %>%
+  add_row(city = "Philly", start_time = ymd("2016-01-25"), membertype = "shortterm") %>%
+  add_row(city = "Philly", start_time = ymd("2016-01-26"), membertype = "shortterm") %>%
+  add_row(city = "Washington", start_time = ymd("2016-01-23"), membertype = "shortterm") %>%
+  add_row(city = "Washington", start_time = ymd("2016-01-23"), membertype = "member") %>%
+  add_row(city = "Washington", start_time = ymd("2016-01-24"), membertype = "shortterm") %>%
+  add_row(city = "Washington", start_time = ymd("2016-01-24"), membertype = "member") %>%
+  add_row(city = "Washington", start_time = ymd("2016-01-25"), membertype = "shortterm") %>%
+  add_row(city = "Washington", start_time = ymd("2016-01-25"), membertype = "member") %>%
+  add_row(city = "Washington", start_time = ymd("2016-01-26"), membertype = "shortterm") %>%
+  add_row(city = "Washington", start_time = ymd("2016-01-26"), membertype = "member") %>%
+  group_by(start_time, city) %>%
+  group_modify(~ add_row(.x, membertype = "all",
+                         number_trips = sum(.x$number_trips),
+                         by100000 = sum(.x$by100000), 
+                         dummy = ifelse(sum(.x$dummy) == 2, 1, 0)))
+
+phillyTemp <- read_csv("philly_temperature.csv") %>%
+  mutate(DATE = ymd(DATE))
+```
+
+My replication paper is **Impact of a public transit strike on public bicycle share use: An interrupted time series natural experiment study** by @FULLER2019. This paper was published in the June 2019 volume of the Journal of Transport & Health. The data was publicly available to me on Harvard Dataverse @DVN. Given that bikeshare schemes are a relatively new phenomenon, there aren't a huge number of papers looking into their effects, but all papers on the topic are relatively recent such as @BAUMAN.
+
+This paper uses Philadelphia's transit workers strike from November 1-7th, 2016, to generate a natural experiment in which other means of transit are interrupted to study the impact on bikeshare ride usage. The statistical technique used is a Bayesian structural time-series model. The authors cited a separate paper detailing this modeling method and its efficacy @brodersen. That paper found the Bayesian structural time-series model to be useful in inferring causal impact, so assuming the authors applied the technique correctly it seems to be an accepted method. 
+
+The authors looked at control cities in Washington DC, Boston, and Chicago which are similar to Philadelphia in their size and in the development of their bikeshare infrastructure. They also attempted to control for the temperature and precipitation levels as variables that would also affect bikeshare ride usage. The study found that bikeshare usage went up in Philadelphia during this transit strike when other options were limited, but that after the strike bikeshare usage returned to the pre-strike baseline. The authors concluded that while interventions directed to incentive bikeshare usage would likely work given the flexibility shown by Philadelphia commuters, these interventions would need to be long term in order to change commuter's habits. 
+
+The authors of this paper produced another paper in 2012 using similar methods to investigate a transit strike in London and the resulting effect on bikeshare use in that case @FULLER2012. That 2012 paper found an increase use of bikeshare programs during the strike, with similar conclusions to my replication paper.
+
+All analysis for this paper is available on my Github^[https://github.com/ddeuel/1006-project]
+
+## Replication results
+
+I was able to completely replicate the interrupted time-series model that the authors of my paper used. The original authors used a flawed dataset and very difficult to read code. I rewrote all of the code myself and cleaned the data in a different way but still created the same model. I replicated both of the figures that were published in my paper. I added titles and captions for context but otherwise made one to one replications where possible. The original authors added some labels and elements of the legend outside of R that I could not replicate exactly. I did not replicate the Bayesian structural time-series model using the CausualImpact R package due to time constraints, and the fact that the authors concluded that this model yielded no different analysis than the time-series model did.
+
+## Extension
+
+My proposed extension is to bring in new data and a new natural experiment. I would like to follow the same modeling procedure as the original authors and my replication, but look at bikeshare data from March to see how Covid-19 has impacted bikeshare use. I think that this would serve as another interesting natural experiment different from the transit workers strike. My hypothesis would be that early in the crisis more people might have used bikeshare to avoid crowded public transit, but later in the crisis as people begin to work from home, we would expect bikeshare usage to drop significantly. I would need to find the source of the bikeshare data that the authors used, but they said that it was publicly available in their paper. It may be that the data is not released quickly enough to look at such a recent phenomenon, in which case I would need to find a different extension. I would use the same time-series model and control for weather data like the original authors did, but Covid-19 has impacted all cities, so we would not be able to control with other cities.
+
+# References:
+
+<div id="refs"></div>
+
+\newpage
+
+# Appendix:
+
+Figure 1 from paper:
+
+![](fig1.jpg){#id .class width=75% height=75%}
+
+\pagebreak
+
+My Replication:
+
+```{r fig1, echo=FALSE}
+
+memberData %>%
+  filter(membertype == "all") %>%
+  filter(start_time > "2016-09-01" & start_time < "2016-12-31") %>%
+  ggplot(aes(start_time, number_trips)) +
+  geom_line() +
+  annotate("rect", xmin = ymd("2016-11-01"), xmax = ymd("2016-11-07"), 
+                ymin = 0, ymax = 20000, alpha = 0.3) +
+  facet_wrap(~city) + 
+  labs(x = "Month",
+       y = "Total Number of Trips",
+       caption = "shaded region is the Philadelphia transit strike period 11/1 to 11/7",
+       title = "Bikeshare Trips in Four Cities",
+       subtitle = "During the Period 9/1/16 to 12/31/16") +
+  theme_classic()
+```
+
+\pagebreak
+
+Figure 2 from paper:
+![](fig2.jpg){#id .class width=75% height=75%}
+
+\pagebreak
+
+My replication:
+
+```{r fig2, echo=FALSE}
+# this is a sloppy solution which the authors used
+# I am going to implement this in a better way
+category <- factor(c(rep(1,305),rep(2,7),rep(3,54)))
+time_strike <- c(rep(0,305),1:7,rep(0,54))
+time_post <- c(rep(0,312),1:54)
+
+allModel <- lm(filter(memberData, city == "Philly" & membertype == "all")$by100000 ~ phillyTemp$MEAN + phillyTemp$PRCP + filter(memberData, city == "Washington" & membertype == "all")$by100000 + filter(memberData, city == "Chicago" & membertype == "all")$by100000 + filter(memberData, city == "Boston" & membertype == "all")$by100000 + category + time_strike + time_post)
+
+shortModel <- lm(filter(memberData, city == "Philly" & membertype == "shortterm")$by100000 ~ phillyTemp$MEAN + phillyTemp$PRCP + filter(memberData, city == "Washington" & membertype == "shortterm")$by100000 + filter(memberData, city == "Chicago" & membertype == "shortterm")$by100000 + filter(memberData, city == "Boston" & membertype == "shortterm")$by100000 + category + time_strike + time_post)
+
+memModel <- lm(filter(memberData, city == "Philly" & membertype == "member")$by100000 ~ phillyTemp$MEAN + phillyTemp$PRCP + filter(memberData, city == "Washington" & membertype == "member")$by100000 + filter(memberData, city == "Chicago" & membertype == "member")$by100000 + filter(memberData, city == "Boston" & membertype == "member")$by100000 + category + time_strike + time_post)
+
+allPreds <- memberData %>%
+  filter(city == "Philly" & membertype == "all") %>%
+  add_predictions(allModel)
+
+shortPreds <- memberData %>%
+  filter(city == "Philly" & membertype == "shortterm") %>%
+  add_predictions(shortModel)
+
+memPreds <- memberData %>%
+  filter(city == "Philly" & membertype == "member") %>%
+  add_predictions(memModel)
+
+finalData <- full_join(allPreds, full_join(memPreds, shortPreds, by = c("start_time", "city", "membertype", "number_trips", "dummy", "by100000", "pred")), by = c("start_time", "city", "membertype", "number_trips", "dummy", "by100000", "pred")) %>%
+  mutate(membertype = recode(membertype, 
+                         'all' = "All Users",
+                         'member' = "Members",
+                         'shortterm' = "Non-Members")) %>%
+  mutate(Observed = by100000) %>%
+  mutate(Fitted = pred) %>%
+  ungroup() %>%
+  select(start_time, Observed, Fitted, membertype) %>%
+  gather(key = "Legend", value = "per100000", -start_time, -membertype)
+
+finalData %>%
+  filter(start_time > ymd("2016-09-01") & start_time < ymd("2016-12-31")) %>%
+  ggplot(aes(x = start_time, y = per100000, color = Legend)) +
+  geom_line() +
+  annotate("rect", xmin = as.Date("2016-11-01", "%Y-%m-%d"), xmax = as.Date("2016-11-07", "%Y-%m-%d"), 
+                ymin = 0, ymax = 300, alpha = 0.3) +
+  facet_grid(membertype ~.) + 
+  labs(x = "Month",
+       y = "Trips per 100,000 people in Philadelphia",
+       caption = "shaded region is the Philadelphia transit strike period",
+       title = "Modeling Bikeshare Trips is Philidelphia",
+       subtitle = "During the period 9/1/16 to 12/31/16") +
+  theme_classic()
+```
