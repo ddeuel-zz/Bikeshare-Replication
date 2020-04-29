@@ -1,0 +1,234 @@
+---
+title: "BikeshareStrikeWrangling"
+author: "Daniel Fuller"
+date: '2018-04-25'
+output:
+      html_document:
+        keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, error = FALSE, tidy = TRUE)
+options(scipen = 2, digits=4)
+```
+
+## Merging the data from each city
+
+```{r}
+library(stringr)
+library(knitr)
+library(dplyr)
+library(lubridate)
+library(magrittr)
+library(purrr)
+
+## Chicago - Divvy
+divvy = list.files(path = "./Bikeshare Data/", pattern = "Divvy.*\\.csv")
+
+### Washington - Cabi
+cabi = list.files(path = "./Bikeshare Data/", pattern = "Cabi.*\\.csv")
+
+### Philly - Indego
+indeg = list.files(path = "./Bikeshare Data/", pattern = "Indego.*\\.csv")
+
+### Boston - Hubway
+hubway = list.files(path = "./Bikeshare Data/", pattern = "Hubway.*\\.csv")
+```
+
+## Chicago
+
+```{r}
+chicago <- divvy %>% 
+    map(function(x) {
+        read.csv(paste0("./Bikeshare Data/", x))
+    }) %>%
+    reduce(rbind)
+
+chicago$city <- "Chicago"
+head(chicago)
+
+chicagoClean <- subset(chicago, select = c(trip_id, tripduration, starttime, stoptime, usertype, city), stringsAsFactors = FALSE)
+names(chicagoClean) <- c("trip_id", "duration", "start_time", "end_time", "passholder_type", "city")
+head(chicagoClean)
+
+## Clean Start Time
+chicagoClean$start_time <- gsub(" .*", "", chicagoClean$start_time)
+chicagoClean$start_time <- mdy(chicagoClean$start_time)
+
+## Clean End Time
+chicagoClean$end_time <- gsub(" .*", "", chicagoClean$end_time)
+chicagoClean$end_time <- mdy(chicagoClean$end_time)
+
+head(chicagoClean)
+```
+
+## Boston
+
+```{r}
+boston <- hubway %>% 
+    map(function(x) {
+        read.csv(paste0("./Bikeshare Data/", x))
+    }) %>%
+    reduce(rbind)
+
+boston$city <- "Boston"
+boston$trip_id <- seq.int(nrow(boston))
+head(boston)
+
+
+bostonClean <- subset(boston, select = c(trip_id, tripduration, starttime, stoptime, usertype, city), stringsAsFactors = FALSE)
+names(bostonClean) <- c("trip_id", "duration", "start_time", "end_time", "passholder_type", "city")
+head(bostonClean)
+
+## Clean Start Time
+bostonClean$start_time <- gsub(" .*", "", bostonClean$start_time)
+bostonClean$start_time <- ymd(bostonClean$start_time)
+
+## Clean End Time
+bostonClean$end_time <- gsub(" .*", "", bostonClean$end_time)
+bostonClean$end_time <- ymd(bostonClean$end_time)
+
+head(bostonClean)
+```
+
+##Philly
+
+I had to import the files individually because R was reading in the variables as different types and it was messing up the `rbind` call. I ran this code to diagnose the problem:
+
+```
+cbind(
+    philly1 = sapply(philly1, class),
+    philly2 = sapply(philly2, class),
+    philly3 = sapply(philly3, class),
+    philly4 = sapply(philly4, class)
+)
+```
+
+From this article [https://stackoverflow.com/questions/1632772/appending-rows-to-a-dataframe-the-factor-problem]
+
+```{r}
+philly1 <- read.csv("./Bikeshare Data/Indego_Trips_2016Q1.csv")
+  philly1 <- subset(philly1, select = c(trip_id, duration, start_time, end_time, passholder_type), stringsAsFactors = FALSE)
+  
+philly2 <- read.csv("./Bikeshare Data/Indego_Trips_2016Q2.csv")
+  philly2 <- subset(philly2, select = c(trip_id, duration, start_time, end_time, passholder_type), stringsAsFactors = FALSE)
+
+philly3 <- read.csv("./Bikeshare Data/Indego_Trips_Q3_2016_trips.csv")
+  philly3 <- subset(philly3, select = c(trip_id, duration, start_time, end_time, passholder_type), stringsAsFactors = FALSE)
+
+philly4 <- read.csv("./Bikeshare Data/Indego_trips_Q4_2016.csv")
+  philly4 <- subset(philly4, select = c(trip_id, duration, start_time, end_time, passholder_type), stringsAsFactors = FALSE)
+
+philly <- bind_rows(philly1, philly2, philly3, philly4)    
+      
+philly$city <- "Philly"
+
+phillyClean <- subset(philly, select = c(trip_id, duration, start_time, end_time, passholder_type, city), stringsAsFactors = FALSE)
+names(phillyClean) <- c("trip_id", "duration", "start_time", "end_time", "passholder_type", "city")
+
+## Clean Start Time
+phillyClean$start_time <- gsub(" .*", "", phillyClean$start_time)
+phillyClean$start_time <- mdy(phillyClean$start_time)
+
+## Clean End Time
+phillyClean$end_time <- gsub(" .*", "", phillyClean$end_time)
+phillyClean$end_time <- mdy(phillyClean$end_time)
+
+##Add records for the missing two days
+phillyClean[365, "start_time"] <- "2016-01-23"
+phillyClean[366, "start_time"] <- "2016-01-24"
+
+head(phillyClean)
+```
+
+##Washington 
+```{r}
+washington <- cabi %>% 
+    map(function(x) {
+        read.csv(paste0("./Bikeshare Data/", x))
+    }) %>%
+    reduce(rbind)
+
+washington$city <- "Washington"
+washington$duration <- as.integer(washington$duration)
+head(washington)
+
+washingtonClean <- subset(washington, select = c(trip_id, duration, start_time, end_time, passholder_type, city), stringsAsFactors = FALSE)
+names(washingtonClean) <- c("trip_id", "duration", "start_time", "end_time", "passholder_type", "city")
+head(washingtonClean)
+
+## Clean Start Time
+washingtonClean$start_time <- gsub(" .*", "", washingtonClean$start_time)
+washingtonClean$start_time <- mdy(washingtonClean$start_time)
+
+## Clean End Time
+washingtonClean$end_time <- gsub(" .*", "", washingtonClean$end_time)
+washingtonClean$end_time <- mdy(washingtonClean$end_time)
+
+## Fill in Missing Days for Washington
+washingtonClean[363, "start_time"] <- "2016-01-23"
+washingtonClean[364, "start_time"] <- "2016-01-24"
+washingtonClean[365, "start_time"] <- "2016-01-25"
+washingtonClean[366, "start_time"] <- "2016-01-26"
+
+head(washingtonClean)
+```
+
+## Appending data
+```{r}
+strikeData <- rbind(chicagoClean, phillyClean, washingtonClean, bostonClean)
+strikeData$month <- month(strikeData$start_time)
+strikeData$day <- day(strikeData$start_time)
+strikeData$year <- year(strikeData$start_time)
+
+strikeData <- filter(strikeData, year > 2015)
+
+head(strikeData)
+
+write.csv(strikeData, file = "strikeData.csv")
+```
+
+## Cleaning and recoding
+
+```{r}
+#add dummy to CityColl
+
+strikeData$dummy <-  ifelse(strikeData$start_time >= as.Date("2016/11/01", format = "%Y/%m/%d"), 1, 0)
+
+strikeData$memberType <- recode_factor(strikeData$passholder_type, 
+                                    `Customer` = "shortterm",
+                                    `Subscriber` = "member",
+                                     `Indego30` = "member",
+                                     `IndegoFlex` = "shortterm",
+                                     `Walk-up` = "shortterm", 
+                                     `Registered` = "member",
+                                     `Casual` = "shortterm",
+                                     `Dependent` = "shortterm",
+                                     `Member` = "member")
+
+table(strikeData$memberType, strikeData$passholder_type)
+
+table(strikeData$passholder_type)
+```
+
+```{r}
+city_day_sum <- strikeData %>% 
+                    group_by(year, month, day, city) %>% 
+                          mutate(mDuration = mean(duration, na.rm = TRUE), 
+                                    number_trips = n())  %>% 
+                          distinct(year, month, day, city, .keep_all=TRUE)
+
+##Normalize by city pop
+## Boston - 667137 (6.67137)
+## Chicago - 2695598 (26.95598)
+## Washington - 672228 (6.72228)
+## Philly - 1567872 (15.67872)
+
+city_day_sum$by100000 <-
+        ifelse(city_day_sum$city == "Philly", city_day_sum$number_trips/15.67872, NA) %>%
+        ifelse(city_day_sum$city == "Washington", city_day_sum$number_trips/6.72228, .) %>%
+        ifelse(city_day_sum$city == "Chicago", city_day_sum$number_trips/26.95598, .) %>%
+        ifelse(city_day_sum$city == "Boston", city_day_sum$number_trips/6.67137, .) 
+
+write.csv(city_day_sum, "city_day_sum.csv")
+```
